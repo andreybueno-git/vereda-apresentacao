@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vereda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ---- o kit de marca (regra do kit: neutros dominam, o verde é acento,
+     o dourado só aparece na peça ACESA) ---- */
+  :root{
+    --branco:#F7F2E9; --areia:#E8DCC8; --carvao:#2A2521; --verde:#3F5B48;
+    --barro:#B4633C; --dourado:#D8A34A;
+    --tinta-2:#5C554E;                 /* carvão a 75%: apoio, passa 4,5:1 sobre branco quente */
+    --creme-sobre-verde:#F2EDE4;
+    --serifa:"Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans:"Work Sans", "Helvetica Neue", Arial, sans-serif;
+    --largura:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--branco); color:var(--carvao);
+    font-family:var(--sans); font-size:clamp(17px, 1.05vw + 12px, 22px); line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+
+  /* ---- a fita de slides: uma tela por seção ---- */
+  /* proximity, não mandatory: numa janela baixa um slide pode ficar mais alto
+     que a tela, e o "mandatory" impediria de rolar até o fim dele */
+  main{ scroll-snap-type:y proximity; height:100dvh; overflow-y:auto; overscroll-behavior:contain; }
+  .slide{
+    scroll-snap-align:start; min-height:100dvh;
+    display:grid; place-items:center; padding:clamp(28px,5vh,64px) clamp(20px,5vw,72px);
+    position:relative;
+  }
+  .slide > .miolo{ width:min(100%, var(--largura)); }
+  .slide.verde{ background:var(--verde); color:var(--creme-sobre-verde); }
+
+  /* ---- tipografia ---- */
+  h1,h2,h3{ font-family:var(--serifa); font-weight:500; line-height:1.05; margin:0; text-wrap:balance; letter-spacing:-0.01em; }
+  h1{ font-size:clamp(2.6rem, 6vw, 5.2rem); }
+  h2{ font-size:clamp(2.1rem, 4.2vw, 3.6rem); }
+  h3{ font-size:clamp(1.35rem, 2vw, 1.8rem); }
+  p{ margin:0; max-width:62ch; }
+  .rotulo{ font-family:var(--sans); font-weight:600; font-size:.8em; letter-spacing:.14em; text-transform:uppercase; color:var(--barro); }
+  .verde .rotulo{ color:var(--areia) }
+  .apoio{ color:var(--tinta-2) }
+  .verde .apoio{ color:var(--areia) }
+  .grande{ font-family:var(--serifa); font-size:clamp(1.4rem, 2.4vw, 2.1rem); line-height:1.3; font-weight:400; }
+
+  .cabeca{ display:flex; flex-direction:column; gap:.6rem; margin-bottom:clamp(20px,3.5vh,40px); }
+  .cabeca .rotulo{ margin-bottom:.2rem }
+
+  /* ---- a capa com a luz (a simulação de fluido revela o vídeo da impressora) ---- */
+  .capa-luz{ padding:0; }
+  .capa-luz .palco{ position:relative; width:100%; min-height:100dvh; display:grid; align-content:center; padding:clamp(28px,5vh,64px) clamp(20px,5vw,72px); overflow:hidden; }
+  .capa-luz .fonte, .capa-luz .luz{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .capa-luz .fonte{ opacity:0; pointer-events:none; object-fit:cover; }
+  .capa-luz .luz{ display:block; pointer-events:none; z-index:0; }
+  /* o véu: o bloco da marca fica sempre sobre verde sólido; a luz acontece à direita */
+  .capa-luz .veu{ position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:linear-gradient(to right, var(--verde) 0%, rgba(63,91,72,.92) 28%, rgba(63,91,72,.35) 50%, rgba(63,91,72,0) 68%); }
+  .capa-luz .miolo{ position:relative; z-index:2; display:grid; justify-items:start; gap:clamp(18px,3.5vh,34px); max-width:560px; }
+  .capa-luz .logo{ width:min(48vw, 360px); height:auto; display:block; }
+  .capa-luz .assinatura{ display:flex; flex-direction:column; gap:.35rem; }
+  .capa-luz .assinatura .rotulo{ color:var(--areia) }
+  .capa-luz .assinatura span{ color:var(--creme-sobre-verde); opacity:.85 }
+  .capa-luz .convite{ font-size:.78em; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--areia); }
+  .capa-luz .convite::before{ content:"▸ " }
+  /* sem WebGL (ou movimento reduzido): o vídeo aparece baixo, em loop, e o deck segue */
+  .sem-luz .capa-luz .fonte{ opacity:.38 }
+  .sem-luz .capa-luz .luz, .sem-luz .capa-luz .convite{ display:none }
+
+  /* ---- encerramento ---- */
+  .capa .miolo{ display:grid; place-items:center; text-align:center; gap:clamp(20px,4vh,40px); position:relative; }
+  .capa .logo{ width:min(52vw, 440px); height:auto; display:block; position:relative; }
+  /* a única aparição do dourado: a luz atrás da marca, como a peça acesa */
+  .capa .luz{
+    position:absolute; inset:0; margin:auto; width:min(80vw,760px); aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(216,163,74,.22), rgba(216,163,74,.06) 55%, transparent 72%);
+    pointer-events:none;
+  }
+  .capa .assinatura{ display:flex; flex-direction:column; gap:.35rem; align-items:center; }
+  .capa .assinatura .rotulo{ color:var(--areia) }
+  .capa .assinatura span{ color:var(--creme-sobre-verde); opacity:.85 }
+
+  /* ---- fileiras de definição (sem cartão) ---- */
+  .definicoes{ display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(20px,3vw,48px); margin-top:clamp(20px,3vh,36px); }
+  .definicoes > div{ border-top:2px solid var(--verde); padding-top:1rem; display:flex; flex-direction:column; gap:.6rem; }
+  .definicoes h3{ font-size:clamp(1.15rem,1.6vw,1.45rem); }
+  .definicoes p{ font-size:.95em }
+
+  /* ---- a sequência dos três passos (é uma ordem de verdade, por isso numera) ---- */
+  .passos{ display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(24px,4vw,64px); align-items:center; }
+  .passos ol{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:clamp(16px,2.4vh,28px); counter-reset:passo; }
+  .passos li{ display:grid; grid-template-columns:3.2rem 1fr; gap:1rem; align-items:start; counter-increment:passo; }
+  .passos li::before{
+    content:counter(passo); font-family:var(--serifa); font-size:2.4rem; line-height:1; color:var(--verde);
+    font-weight:500; padding-top:.1rem;
+  }
+  .passos li:last-child::before{ color:var(--dourado) }  /* a peça chega: acende */
+  .passos li h3{ margin-bottom:.35rem }
+  .passos li p{ font-size:.95em }
+  figure{ margin:0; display:flex; flex-direction:column; gap:.6rem; }
+  figure img{ width:100%; height:auto; display:block; border-radius:6px; }
+  figcaption{ font-size:.85em; color:var(--tinta-2); }
+
+  /* ---- o site: três jeitos de criar + a peça paramétrica ao vivo ---- */
+  .site{ display:grid; grid-template-columns:.9fr 1.1fr; gap:clamp(24px,4vw,64px); align-items:center; }
+  .jeitos{ display:flex; flex-direction:column; gap:clamp(14px,2.2vh,24px); }
+  .jeitos > div{ border-top:2px solid var(--verde); padding-top:.8rem; display:flex; flex-direction:column; gap:.35rem; }
+  .jeitos h3{ font-size:clamp(1.15rem,1.6vw,1.45rem) }
+  .jeitos p{ font-size:.93em }
+  .jeitos .promessa{ border-top:0; padding-top:0; font-family:var(--serifa); font-size:clamp(1.1rem,1.5vw,1.35rem); line-height:1.35; color:var(--carvao); }
+  .editor{ background:#fff; border:1px solid var(--areia); border-radius:10px; padding:clamp(12px,1.4vw,18px); display:grid; gap:.7rem; }
+  .editor canvas{ width:100%; aspect-ratio:4/3; display:block; border-radius:6px; background:linear-gradient(180deg,#FBF8F2,#F1EAE0); cursor:grab; touch-action:none; }
+  .controles{ display:grid; grid-template-columns:repeat(4,1fr); gap:.6rem .9rem; }
+  .controles label{ display:flex; flex-direction:column; gap:.2rem; font-size:.72em; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--tinta-2); }
+  .controles input[type=range]{ width:100%; accent-color:var(--verde); margin:0; }
+  .cores{ display:flex; gap:.5rem; align-items:center; }
+  .cores button{ width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+  .cores button[aria-pressed="true"]{ border-color:var(--carvao) }
+  .cores button:focus-visible{ outline:2px solid var(--barro); outline-offset:2px }
+  .leitura{ display:flex; justify-content:space-between; align-items:baseline; gap:1rem; font-size:.82em; color:var(--tinta-2); font-variant-numeric:tabular-nums; }
+  .leitura b{ color:var(--carvao); font-weight:600 }
+  .leitura .preco{ font-family:var(--serifa); font-size:1.45em; color:var(--verde); }
+  .pedir{
+    font-family:var(--sans); font-weight:600; font-size:.92em; color:var(--branco); background:var(--verde);
+    border:0; border-radius:8px; padding:.75rem 1rem; cursor:pointer; transition:background .2s;
+  }
+  .pedir:hover{ background:#34503C } .pedir:focus-visible{ outline:2px solid var(--barro); outline-offset:2px }
+  .pedir.foi{ background:var(--barro) }
+
+  /* ---- a galeria ---- */
+  .pecas{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(16px,2.4vw,32px); }
+  .pecas figure img{ aspect-ratio:1; object-fit:cover; }
+  .pecas figure img.larga{ aspect-ratio:1; object-position:center 40%; }
+  .pecas figcaption b{ display:block; color:var(--carvao); font-weight:600; }
+
+  /* ---- missão / visão / valores ---- */
+  .tres{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(20px,3vw,48px); }
+  .tres > div{ display:flex; flex-direction:column; gap:.8rem; border-top:2px solid var(--verde); padding-top:1rem; }
+  .valores{ display:flex; flex-direction:column; gap:.2rem; }
+  .valores span{ font-family:var(--serifa); font-size:clamp(1.6rem,2.6vw,2.4rem); line-height:1.15; }
+
+  /* ---- objetivos → metas ---- */
+  table{ width:100%; border-collapse:collapse; margin-top:.5rem; }
+  th{ text-align:left; font-weight:600; font-size:.8em; letter-spacing:.14em; text-transform:uppercase; color:var(--barro); padding:0 0 .8rem; border-bottom:2px solid var(--verde); }
+  td{ padding:clamp(14px,2vh,22px) 0; border-bottom:1px solid var(--areia); vertical-align:top; font-size:1.02em; }
+  td.n{ width:3.2rem; font-family:var(--serifa); font-size:1.8rem; line-height:1; color:var(--verde); font-weight:500; }
+  td.seta{ width:2.4rem; color:var(--barro); text-align:center; }
+  td.meta{ font-weight:500 }
+
+  /* ---- localização ---- */
+  .endereco{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(24px,4vw,64px); align-items:start; }
+  .endereco .onde{ display:flex; flex-direction:column; gap:.4rem; }
+  .endereco .onde .rua{ font-family:var(--serifa); font-size:clamp(2rem,4vw,3.4rem); line-height:1.05; font-weight:500; }
+  .endereco .onde .cidade{ font-size:1.1em; color:var(--tinta-2); }
+  .endereco .porque{ display:flex; flex-direction:column; gap:1.1rem; }
+  .endereco .porque div{ border-top:2px solid var(--verde); padding-top:.8rem; display:flex; flex-direction:column; gap:.4rem; }
+  .endereco .porque p{ font-size:.95em }
+  .mapa{ margin-top:1.4rem; width:100%; max-width:420px; height:auto; }
+
+  /* ---- navegação da apresentação ---- */
+  nav.pontos{
+    position:fixed; right:clamp(10px,1.6vw,22px); top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:10px; z-index:5;
+  }
+  nav.pontos a{ width:9px; height:9px; border-radius:50%; background:var(--areia); border:1px solid rgba(42,37,33,.25); display:block; }
+  nav.pontos a[aria-current="true"]{ background:var(--verde); border-color:var(--verde); }
+  nav.pontos a:focus-visible{ outline:2px solid var(--barro); outline-offset:2px; }
+  .contador{ position:fixed; left:clamp(14px,2vw,28px); bottom:clamp(12px,2vh,22px); font-size:.8em; color:var(--tinta-2); font-variant-numeric:tabular-nums; z-index:5; }
+  .dica{ position:fixed; right:clamp(14px,2vw,28px); bottom:clamp(12px,2vh,22px); font-size:.78em; color:var(--tinta-2); z-index:5; }
+  .verde-ativa .contador, .verde-ativa .dica{ color:var(--areia) }
+  .verde-ativa nav.pontos a{ background:rgba(242,237,228,.35); border-color:rgba(242,237,228,.5) }
+  .verde-ativa nav.pontos a[aria-current="true"]{ background:var(--creme-sobre-verde); border-color:var(--creme-sobre-verde) }
+
+  /* ---- telefone ---- */
+  @media (max-width: 820px){
+    .definicoes, .tres, .pecas, .passos, .endereco{ grid-template-columns:1fr; }
+    .passos figure{ order:-1 }
+    .passos figure img{ aspect-ratio:16/10; object-fit:cover; }
+    .pecas figure:nth-child(3){ display:none }
+    .slide{ height:auto; min-height:100dvh; align-items:start; padding-top:56px; }
+    .dica{ display:none }
+    td.n{ width:2.4rem; font-size:1.4rem }
+  }
+
+  /* ---- impressão: um slide por página ---- */
+  @media print{
+    main{ height:auto; overflow:visible; scroll-snap-type:none }
+    .slide{ height:auto; min-height:0; page-break-after:always; break-after:page; padding:24mm 18mm; }
+    nav.pontos, .contador, .dica{ display:none }
+    .slide.verde{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<main id="fita">
+
+  <!-- 1 · capa -->
+  <section class="slide verde capa-luz" id="s1" aria-label="Capa">
+    <div class="palco">
+      <!-- O vídeo não aparece: é a TEXTURA que o shader revela onde a luz é
+           densa, e o tempo dele segue a posição horizontal do ponteiro.
+           Sem WebGL, a classe .sem-luz o traz para a tela, baixo e em loop. -->
+      <video class="fonte" id="impressora" muted playsinline preload="auto" poster="{{IMG:poster}}" aria-hidden="true">
+        <source src="{{VID:webm}}" type="video/webm">
+        <source src="{{VID:mp4}}" type="video/mp4">
+      </video>
+      <canvas class="luz" id="luz" aria-hidden="true"></canvas>
+      <div class="veu" aria-hidden="true"></div>
+      <div class="miolo">
+        <img class="logo" src="{{IMG:logo}}" alt="vereda — a luz do Cerrado dentro de casa" width="1345" height="1082">
+        <div class="assinatura">
+          <span class="rotulo">Plano de negócio</span>
+          <span>Palmas, Tocantins · 2026</span>
+        </div>
+        <p class="convite">Passe o ponteiro. A luz acompanha, e a peça vai nascendo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · o que é -->
+  <section class="slide" id="s2" aria-label="O que é a vereda">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">1 · Descrição do negócio</span>
+        <h2>Decoração para casa, impressa em 3D. E a sua ideia, feita sob demanda.</h2>
+        <p class="grande apoio">Luminárias, vasos e objetos que saem da impressora uma peça por vez, em Palmas. Além do catálogo, artigos personalizados: a pessoa cria a ideia, a gente imprime, e ela chega na casa dela.</p>
+      </div>
+      <div class="definicoes">
+        <div>
+          <h3>O problema que resolve</h3>
+          <p>Decorar com peças bonitas e únicas costuma ser caro, demorado e igual ao que todo mundo tem. A impressão 3D produz sob demanda: sem estoque parado, sem pedido mínimo, sem duas peças iguais.</p>
+        </div>
+        <div>
+          <h3>O diferencial</h3>
+          <p>A pessoa participa da criação. Escolhe forma, cor e tamanho no site, ou manda a ideia dela. Cada peça é impressa e acabada à mão, com a luz do Cerrado como assinatura.</p>
+        </div>
+        <div>
+          <h3>Para quem</h3>
+          <p>Quem quer decorar a casa com o que não se acha em loja de departamento; quem procura um presente com nome, data ou história; arquitetos e decoradores que precisam de uma peça sob medida.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · personalizados -->
+  <section class="slide" id="s3" aria-label="A sua ideia, na sua casa">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">Não é só decoração</span>
+        <h2>A sua ideia, impressa, na sua casa.</h2>
+      </div>
+      <div class="passos">
+        <ol>
+          <li>
+            <div>
+              <h3>Você imagina</h3>
+              <p>Escolhe uma peça do catálogo e muda a cor e o tamanho, ou descreve o que só existe na sua cabeça: um nome, uma data, um formato.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>A gente imprime</h3>
+              <p>Modelagem em 3D, impressão em Palmas e acabamento à mão. Uma peça por vez, sob demanda, sem estoque.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>Chega na sua casa</h3>
+              <p>Embalada e enviada para qualquer lugar do Brasil, ou retirada no ateliê em Palmas.</p>
+            </div>
+          </li>
+        </ol>
+        <figure>
+          <img src="{{IMG:atelie}}" alt="Kit de carimbos com o alfabeto, impresso em 3D, ao lado de uma massa carimbada com letras" width="1100" height="1100">
+          <figcaption>Kit de carimbos com o alfabeto: feito sob encomenda, do jeito que o cliente pediu.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · o site -->
+  <section class="slide" id="s4" aria-label="O site: criar a peça em 3D">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">Dentro do site</span>
+        <h2>A pessoa cria a peça e vê em 3D na hora.</h2>
+      </div>
+      <div class="site">
+        <div class="jeitos">
+          <div>
+            <h3>Tags e nomes</h3>
+            <p>Escreve o texto, escolhe a fonte e a cor. A plaquinha, a tag ou o nome nasce na tela, do tamanho que quiser.</p>
+          </div>
+          <div>
+            <h3>Uma foto</h3>
+            <p>Sobe a foto e ela vira relevo na peça: a imagem só aparece quando a luminária acende.</p>
+          </div>
+          <div>
+            <h3>Uma ideia</h3>
+            <p>Descreve o que quer, e um gerador paramétrico, com ajuda de IA, monta o objeto. Daí é ajustar altura, forma, torção e cor até ficar do jeito dela.</p>
+          </div>
+          <p class="promessa">Tudo em 3D, em tempo real, no navegador, com o preço calculado na hora. Gostou? Um botão manda para a impressora, e a ideia chega na casa da pessoa.</p>
+        </div>
+        <div class="editor" aria-label="Demonstração: uma peça paramétrica que muda conforme os controles">
+          <canvas id="peca" width="800" height="600" role="img" aria-label="Um vaso impresso em 3D, girando, que muda de forma conforme os controles abaixo"></canvas>
+          <div class="controles">
+            <label>Altura <input type="range" id="c-altura" min="60" max="160" value="110"></label>
+            <label>Forma <input type="range" id="c-bojo" min="0" max="100" value="55"></label>
+            <label>Torção <input type="range" id="c-torcao" min="0" max="120" value="35"></label>
+            <label>Facetas <input type="range" id="c-facetas" min="5" max="32" value="10"></label>
+          </div>
+          <div class="leitura">
+            <div class="cores" role="group" aria-label="Cor da peça">
+              <button type="button" data-cor="#EFE6D6" aria-label="Creme" aria-pressed="true" style="background:#EFE6D6"></button>
+              <button type="button" data-cor="#C07A55" aria-label="Terracota" aria-pressed="false" style="background:#C07A55"></button>
+              <button type="button" data-cor="#4E6B57" aria-label="Verde-musgo" aria-pressed="false" style="background:#4E6B57"></button>
+              <button type="button" data-cor="#2E2A26" aria-label="Carvão" aria-pressed="false" style="background:#2E2A26"></button>
+            </div>
+            <div>estimativa · <b id="l-gramas">–</b> g · <b id="l-horas">–</b> h · <span class="preco" id="l-preco">R$ –</span></div>
+          </div>
+          <button type="button" class="pedir" id="pedir">Imprimir esta peça · chega na sua casa</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · as peças -->
+  <section class="slide" id="s5" aria-label="As peças">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">O que já sai da impressora</span>
+        <h2>Luminárias, vasos e objetos.</h2>
+      </div>
+      <div class="pecas">
+        <figure>
+          <img src="{{IMG:cogumelo}}" alt="Luminária de mesa em forma de cogumelo, acesa, com luz quente" width="1100" height="1100">
+          <figcaption><b>Luminária Cogumelo</b> mesa · cúpula plissada · luz quente</figcaption>
+        </figure>
+        <figure>
+          <img src="{{IMG:vaso}}" alt="Vaso facetado cor terracota com capim seco" width="1024" height="1024">
+          <figcaption><b>Vaso facetado</b> decoração · qualquer cor · qualquer tamanho</figcaption>
+        </figure>
+        <figure>
+          <img class="larga" src="{{IMG:hero}}" alt="Pendente plissado aceso sobre uma mesa de madeira, com a parede verde ao fundo" width="1600" height="1067">
+          <figcaption><b>Pendente vereda</b> teto · a luz do Cerrado dentro de casa</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · missão, visão, valores -->
+  <section class="slide" id="s6" aria-label="Missão, visão e valores">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">2 · Definição estratégica</span>
+        <h2>Por que existe, aonde quer chegar, o que não negocia.</h2>
+      </div>
+      <div class="tres">
+        <div>
+          <h3>Missão</h3>
+          <p>Levar produtos personalizados, com elegância e sofisticação, de forma rápida, fácil e barata.</p>
+        </div>
+        <div>
+          <h3>Visão</h3>
+          <p>Vender para todo o Brasil, levando elegância a todo o país.</p>
+        </div>
+        <div>
+          <h3>Valores</h3>
+          <div class="valores">
+            <span>Qualidade</span>
+            <span>Responsabilidade</span>
+            <span>Elegância</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · objetivos e metas -->
+  <section class="slide" id="s7" aria-label="Objetivos e metas">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">3 · Objetivos e metas</span>
+        <h2>Três objetivos, cada um com um número para conferir.</h2>
+      </div>
+      <table>
+        <thead>
+          <tr><th></th><th>Objetivo</th><th></th><th>Meta mensurável</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="n">1</td>
+            <td>Vender 100 peças no primeiro mês</td>
+            <td class="seta" aria-hidden="true">→</td>
+            <td class="meta">Pelo menos 25 vendas por semana</td>
+          </tr>
+          <tr>
+            <td class="n">2</td>
+            <td>Criar 5 peças exclusivas</td>
+            <td class="seta" aria-hidden="true">→</td>
+            <td class="meta">Desenvolver e lançar 5 modelos exclusivos</td>
+          </tr>
+          <tr>
+            <td class="n">3</td>
+            <td>Vender para fora de Palmas</td>
+            <td class="seta" aria-hidden="true">→</td>
+            <td class="meta">Realizar as primeiras 10 vendas internacionais</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7 · localização -->
+  <section class="slide" id="s8" aria-label="Localização">
+    <div class="miolo">
+      <div class="cabeca">
+        <span class="rotulo">4 · Localização do negócio</span>
+        <h2>Perto do centro, com aluguel que cabe numa produção sob demanda.</h2>
+      </div>
+      <div class="endereco">
+        <div class="onde">
+          <span class="rua">906 Sul, Alameda 12</span>
+          <span class="cidade">Palmas, Tocantins</span>
+          <svg class="mapa" viewBox="0 0 420 150" role="img" aria-label="Esquema: o ateliê na 906 Sul, a poucas quadras do centro de Palmas">
+            <line x1="20" y1="75" x2="400" y2="75" stroke="#E8DCC8" stroke-width="4" stroke-linecap="round"/>
+            <line x1="120" y1="40" x2="120" y2="110" stroke="#E8DCC8" stroke-width="4" stroke-linecap="round"/>
+            <line x1="300" y1="40" x2="300" y2="110" stroke="#E8DCC8" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="120" cy="75" r="11" fill="#3F5B48"/>
+            <text x="120" y="130" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="14" fill="#5C554E">ateliê · 906 Sul</text>
+            <circle cx="300" cy="75" r="8" fill="none" stroke="#B4633C" stroke-width="3"/>
+            <text x="300" y="130" text-anchor="middle" font-family="Work Sans, Arial, sans-serif" font-size="14" fill="#5C554E">centro</text>
+          </svg>
+        </div>
+        <div class="porque">
+          <div>
+            <h3>Por que aqui</h3>
+            <p>Perto do centro e, mesmo assim, com aluguel mais barato do que nas quadras comerciais principais. Custo fixo baixo é o que permite produzir sob demanda com preço acessível.</p>
+          </div>
+          <div>
+            <h3>O que isso muda</h3>
+            <p>O cliente de Palmas retira no ateliê sem atravessar a cidade; a transportadora recolhe o que vai para o resto do Brasil. Como a venda é pelo site, o endereço serve à produção e à entrega, não à vitrine.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · encerramento -->
+  <section class="slide verde capa" id="s9" aria-label="Encerramento">
+    <div class="miolo">
+      <div class="luz" aria-hidden="true"></div>
+      <h1>Obrigado.</h1>
+      <img class="logo" src="{{IMG:logo}}" alt="vereda — a luz do Cerrado dentro de casa" width="1345" height="1082" style="width:min(36vw,300px)">
+      <div class="assinatura">
+        <span>veredacerrado.com · @vereda.cerrado</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<nav class="pontos" aria-label="Slides">
+  <a href="#s1" aria-label="Capa"></a>
+  <a href="#s2" aria-label="O que é a vereda"></a>
+  <a href="#s3" aria-label="A sua ideia, na sua casa"></a>
+  <a href="#s4" aria-label="O site: criar a peça em 3D"></a>
+  <a href="#s5" aria-label="As peças"></a>
+  <a href="#s6" aria-label="Missão, visão e valores"></a>
+  <a href="#s7" aria-label="Objetivos e metas"></a>
+  <a href="#s8" aria-label="Localização"></a>
+  <a href="#s9" aria-label="Encerramento"></a>
+</nav>
+<div class="contador" aria-live="polite"><span id="atual">1</span> / <span id="total">8</span></div>
+<div class="dica">← → para trocar de slide · F para tela cheia</div>
+
+<script>
+(function(){
+  var fita = document.getElementById('fita');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var pontos = Array.prototype.slice.call(document.querySelectorAll('nav.pontos a'));
+  var atual = 0;
+  document.getElementById('total').textContent = slides.length;
+
+  function marcar(i){
+    atual = i;
+    pontos.forEach(function(p, k){ p.setAttribute('aria-current', k === i ? 'true' : 'false'); });
+    document.getElementById('atual').textContent = i + 1;
+    document.body.classList.toggle('verde-ativa', slides[i].classList.contains('verde'));
+  }
+  function ir(i){
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    slides[i].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    marcar(i);
+  }
+  /* o slide "atual" é o que ocupa o meio da tela — vale para rolagem, roda e toque */
+  var obs = new IntersectionObserver(function(entradas){
+    entradas.forEach(function(e){ if (e.isIntersecting) marcar(slides.indexOf(e.target)); });
+  }, { root: fita, threshold: 0.6 });
+  slides.forEach(function(s){ obs.observe(s); });
+
+  document.addEventListener('keydown', function(ev){
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    switch (ev.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ': ev.preventDefault(); ir(atual + 1); break;
+      case 'ArrowLeft':  case 'ArrowUp':   case 'PageUp':   ev.preventDefault(); ir(atual - 1); break;
+      case 'Home': ev.preventDefault(); ir(0); break;
+      case 'End':  ev.preventDefault(); ir(slides.length - 1); break;
+      case 'f': case 'F':
+        if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+        break;
+    }
+  });
+  pontos.forEach(function(p, k){ p.addEventListener('click', function(ev){ ev.preventDefault(); ir(k); }); });
+  marcar(0);
+})();
+</script>
+
+<script>
+/* A PEÇA PARAMÉTRICA AO VIVO — sem biblioteca nenhuma, para a apresentação
+   funcionar sem internet. É um sólido de revolução: um perfil (raio por
+   altura) girado em N facetas, com torção; o canvas 2D desenha as faces
+   ordenadas por profundidade, sombreadas por uma luz fixa. Os controles
+   mudam o perfil e a peça é redesenhada no mesmo quadro — é exatamente a
+   promessa do slide, "vê em 3D na hora". */
+(function(){
+  var cv = document.getElementById('peca'); if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+  var el = function(id){ return document.getElementById(id); };
+  var ctl = { altura: el('c-altura'), bojo: el('c-bojo'), torcao: el('c-torcao'), facetas: el('c-facetas') };
+  var cor = '#EFE6D6', rotY = 0.7, girando = true, pausaAte = 0, visivel = false, arrastando = false, ultimoX = 0;
+  var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function ajustarTamanho(){
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 800, h = cv.clientHeight || 600;
+    var W = Math.round(w*dpr), H = Math.round(h*dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  }
+  /* o perfil: raio relativo em função da altura relativa t (0 = base, 1 = boca).
+     "forma" vai de reta a barriguda; a boca sempre afina um pouco */
+  function raio(t, bojo){
+    return 0.62 + Math.sin(Math.PI * Math.pow(t, 0.85)) * (0.12 + 0.6*bojo) - 0.22*t;
+  }
+  function rgb(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+
+  function desenhar(){
+    ajustarTamanho();
+    var W = cv.width, H = cv.height; ctx.clearRect(0,0,W,H);
+    var alt = +ctl.altura.value, bojo = +ctl.bojo.value/100, tor = +ctl.torcao.value*Math.PI/180, fac = +ctl.facetas.value;
+    var aneis = 28, esc = Math.min(W, H)/215, R = 42*esc, Hm = alt*esc;
+    var cx = W/2, cy = H/2 + Hm*0.04, tilt = -0.34, cT = Math.cos(tilt), sT = Math.sin(tilt), f = 3.4*Math.max(W,H);
+    var eixo = [0, cT, sT];                                  /* o eixo da peça, já inclinado */
+    var luz = [-0.45, -0.72, 0.53];
+
+    var v = [];
+    for (var i = 0; i <= aneis; i++) {
+      var t = i/aneis, y = (t - 0.5)*Hm, r = raio(t, bojo)*R, anel = [];
+      for (var j = 0; j < fac; j++) {
+        var a = j*2*Math.PI/fac + t*tor + rotY, x = r*Math.cos(a), z = r*Math.sin(a);
+        anel.push([x, y*cT - z*sT, y*sT + z*cT]);
+      }
+      v.push(anel);
+    }
+    var base = rgb(cor), faces = [], areaMm2 = 0;
+    for (var i = 0; i < aneis; i++) for (var j = 0; j < fac; j++) {
+      var A = v[i][j], B = v[i][(j+1)%fac], C = v[i+1][(j+1)%fac], D = v[i+1][j];
+      var ux = B[0]-A[0], uy = B[1]-A[1], uz = B[2]-A[2], wx = D[0]-A[0], wy = D[1]-A[1], wz = D[2]-A[2];
+      var nx = uy*wz - uz*wy, ny = uz*wx - ux*wz, nz = ux*wy - uy*wx, nl = Math.hypot(nx,ny,nz) || 1;
+      nx/=nl; ny/=nl; nz/=nl;
+      var px = (A[0]+B[0]+C[0]+D[0])/4, py = (A[1]+B[1]+C[1]+D[1])/4, pz = (A[2]+B[2]+C[2]+D[2])/4;
+      /* normal para FORA: comparada com o vetor radial (do eixo até o centro da face) */
+      var ao = px*eixo[0] + py*eixo[1] + pz*eixo[2];
+      var rx = px - ao*eixo[0], ry = py - ao*eixo[1], rz = pz - ao*eixo[2];
+      if (nx*rx + ny*ry + nz*rz < 0) { nx=-nx; ny=-ny; nz=-nz; }
+      var dentro = nz < 0;                                  /* a parede de dentro, vista pela boca */
+      var luzD = Math.max(0, nx*luz[0] + ny*luz[1] + nz*luz[2]);
+      var s = (0.42 + 0.58*luzD) * (dentro ? 0.55 : 1);
+      /* a área da face = dois triângulos, em 3D (o cross de cima é o de A-B×A-D:
+         vale um paralelogramo, que já é a face inteira quando ela é plana) */
+      var e1x = C[0]-A[0], e1y = C[1]-A[1], e1z = C[2]-A[2], e2x = D[0]-A[0], e2y = D[1]-A[1], e2z = D[2]-A[2];
+      var t2 = Math.hypot(e1y*e2z - e1z*e2y, e1z*e2x - e1x*e2z, e1x*e2y - e1y*e2x);
+      var t1 = Math.hypot(uy*e1z - uz*e1y, uz*e1x - ux*e1z, ux*e1y - uy*e1x);
+      areaMm2 += (t1 + t2) / 2 / (esc*esc);
+      faces.push({ z: pz, p: [A,B,C,D], s: s });
+    }
+    faces.sort(function(p, q){ return p.z - q.z; });          /* de trás para a frente */
+
+    function proj(P){ var k = f/(f - P[2]); return [cx + P[0]*k, cy + P[1]*k]; }
+    /* a sombra no chão */
+    var rb = raio(0, bojo)*R;
+    ctx.save(); ctx.translate(cx, cy + Hm*0.5*cT + 6*esc); ctx.scale(1, 0.32);
+    var g = ctx.createRadialGradient(0,0,0, 0,0, rb*1.7); g.addColorStop(0,'rgba(42,37,33,.22)'); g.addColorStop(1,'rgba(42,37,33,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0, rb*1.7, 0, 2*Math.PI); ctx.fill(); ctx.restore();
+
+    for (var k = 0; k < faces.length; k++) {
+      var F = faces[k], q = F.p.map(proj), c = base.map(function(ch){ return Math.round(ch*F.s); });
+      ctx.beginPath(); ctx.moveTo(q[0][0], q[0][1]);
+      for (var m = 1; m < 4; m++) ctx.lineTo(q[m][0], q[m][1]);
+      ctx.closePath();
+      ctx.fillStyle = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; ctx.fill();
+      ctx.strokeStyle = 'rgba(42,37,33,.10)'; ctx.lineWidth = Math.max(1, 0.6*esc); ctx.stroke();
+    }
+    /* a estimativa: parede de 2 perímetros (2,0 mm) em PLA (1,24 g/cm³), base
+       de 3 mm, e 10% a mais pelo que a fatia real acrescenta (boca, ajustes);
+       ~8 g/h. O preço é a conta da loja: material + energia (150 W) + desgaste
+       da máquina + acabamento à mão, tudo × 2,2 de margem */
+    var baseMm2 = Math.PI*Math.pow(raio(0,bojo)*42, 2);
+    var gramas = (areaMm2*2.0 + baseMm2*3.0)/1000 * 1.24 * 1.10;
+    var horas = gramas/8;
+    var preco = (gramas/1000*90 + horas*(0.150*0.95 + 1.20) + 12) * 2.2;
+    el('l-gramas').textContent = Math.round(gramas);
+    el('l-horas').textContent = horas.toFixed(1).replace('.', ',');
+    el('l-preco').textContent = 'R$ ' + Math.round(preco);
+  }
+
+  function quadro(agora){
+    if (visivel && !reduz && !arrastando && agora > pausaAte) rotY += 0.007;
+    desenhar();
+    if (visivel) requestAnimationFrame(quadro);
+  }
+  var fita = document.getElementById('fita');
+  new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      var antes = visivel; visivel = e.isIntersecting;
+      if (visivel && !antes) requestAnimationFrame(quadro);
+    });
+  }, { root: fita, threshold: 0.2 }).observe(cv.closest('.slide'));
+
+  Object.keys(ctl).forEach(function(k){ ctl[k].addEventListener('input', function(){ pausaAte = performance.now() + 2500; desenhar(); }); });
+  Array.prototype.forEach.call(document.querySelectorAll('.cores button'), function(b){
+    b.addEventListener('click', function(){
+      cor = b.getAttribute('data-cor');
+      Array.prototype.forEach.call(document.querySelectorAll('.cores button'), function(o){ o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+      desenhar();
+    });
+  });
+  /* girar com o dedo ou o mouse */
+  cv.addEventListener('pointerdown', function(e){ arrastando = true; ultimoX = e.clientX; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+  cv.addEventListener('pointermove', function(e){ if (!arrastando) return; rotY += (e.clientX - ultimoX)*0.012; ultimoX = e.clientX; desenhar(); });
+  cv.addEventListener('pointerup', function(){ arrastando = false; pausaAte = performance.now() + 2500; cv.style.cursor = 'grab'; });
+  cv.addEventListener('pointercancel', function(){ arrastando = false; });
+  window.addEventListener('resize', desenhar);
+
+  var pedir = el('pedir'), rotulo = pedir.textContent;
+  pedir.addEventListener('click', function(){
+    pedir.textContent = 'Na fila da impressora ✓ · chega em até 7 dias'; pedir.classList.add('foi');
+    setTimeout(function(){ pedir.textContent = rotulo; pedir.classList.remove('foi'); }, 2800);
+  });
+  desenhar();
+})();
+</script>
+
+<script>
+{{JS:luz}}
+</script>
+<script>
+/* A CAPA: liga a simulação de luz ao vídeo da impressora, e trata o caso
+   de ela não conseguir rodar (sem WebGL, vídeo que não carrega, ou pessoa
+   que pediu movimento reduzido). Num projetor ninguém mexe o mouse, então
+   depois de 3 s parada a luz passeia sozinha. */
+(function(){
+  var tela = document.getElementById('luz'), video = document.getElementById('impressora');
+  if (!tela || !video) return;
+  var reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var decidido = false, motor = null;
+
+  function semLuz(){
+    if (decidido) return;
+    decidido = true;
+    document.documentElement.classList.add('sem-luz');
+    video.loop = true;
+    video.play().catch(function(){ /* autoplay bloqueado: fica o pôster */ });
+  }
+  if (reduz || typeof window.iniciarLuz !== 'function') { semLuz(); return; }
+
+  function ligar(){
+    if (decidido) return;
+    try { motor = window.iniciarLuz({ canvas: tela, video: video }); } catch (e) { console.error('luz:', e); }
+    if (!motor) { semLuz(); return; }
+    decidido = true;
+    passear();
+  }
+  if (video.readyState >= 2) ligar(); else video.addEventListener('loadeddata', ligar, { once: true });
+  /* com os dois <source> falhando, o erro chega no ÚLTIMO source, não no <video> */
+  video.addEventListener('error', semLuz);
+  var ultima = video.querySelector('source:last-of-type');
+  if (ultima) ultima.addEventListener('error', semLuz);
+  setTimeout(semLuz, 3500);
+  /* alguns navegadores só decodificam depois de um play(); o pause em seguida
+     deixa o quadro pronto para a textura sem o vídeo andar sozinho */
+  video.play().then(function(){ video.pause(); }).catch(function(){ try { video.currentTime = 0.5; } catch (e) {} });
+
+  /* a luz que passeia sozinha: um caminho lento pela metade direita da capa */
+  var ultimoToque = 0, capa = tela.closest('.slide'), visivel = true;
+  window.addEventListener('pointermove', function(){ ultimoToque = performance.now(); }, { passive: true });
+  window.addEventListener('touchmove',   function(){ ultimoToque = performance.now(); }, { passive: true });
+  new IntersectionObserver(function(es){ es.forEach(function(e){ visivel = e.isIntersecting; }); },
+    { root: document.getElementById('fita'), threshold: 0.3 }).observe(capa);
+  function passear(){
+    requestAnimationFrame(passear);
+    if (!motor || !visivel || performance.now() - ultimoToque < 3000) return;
+    var t = performance.now() / 1000, r = tela.getBoundingClientRect();
+    var nx = 0.64 + 0.28 * Math.sin(t * 0.45), ny = 0.50 + 0.24 * Math.sin(t * 0.70 + 1.3);
+    motor.mover(r.left + nx * r.width, r.top + ny * r.height);
+  }
+})();
+</script>
+</body>
+</html>
